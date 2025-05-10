@@ -7,3 +7,4 @@ __pycache__/
 *.pyz
 *.pywz
 __init__.py
+creds

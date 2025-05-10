@@ -5,9 +5,10 @@ import logging
 
 from app.models.model_loader import get_model, get_tokenizer
 from app.services.generation_service import generate_response
-
+from app.services.firebase_initiator import initialize_firebase
 # Configure logging
 logger = logging.getLogger(__name__)
+db = initialize_firebase()
 
 # Create router
 router = APIRouter(
@@ -31,3 +32,20 @@ def ask(request: AskRequest):
             status_code=500,
             detail="Failed to generate valid JSON response"
         )
+
+@router.get("/users")
+def get_users():
+    try:
+        # Get users collection
+        users_ref = db.collection("users").stream()
+        
+        # Convert Firestore documents to dictionaries
+        users_list = []
+        for user in users_ref:
+            user_data = user.to_dict()
+            user_data['id'] = user.id  # Add document ID
+            users_list.append(user_data)
+        
+        return {"users": users_list}
+    except Exception as e:
+        return {"error": str(e), "users": []}
