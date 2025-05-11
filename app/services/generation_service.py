@@ -9,14 +9,32 @@ from app.models.model_loader import get_model, get_tokenizer
 # Configure logging
 logger = logging.getLogger(__name__)
 
+def normalize_answer_keys(data):
+    """
+    Recursively normalize any answer-related key to 'answer'.
+    Handles variations like 'correct_answer', 'right_answer', 'solution', etc.
+    """
+    answer_keys = {"answer", "correct_answer", "right_answer", "ans", "solution", "correct", "response"}
+
+    if isinstance(data, dict):
+        normalized = {}
+        for key, value in data.items():
+            normalized_key = "answer" if key.lower().strip() in answer_keys else key
+            normalized[normalized_key] = normalize_answer_keys(value)
+        return normalized
+    elif isinstance(data, list):
+        return [normalize_answer_keys(item) for item in data]
+    else:
+        return data
+
 def generate_response(instruction):
     """
-    Generate a response using the model and return clean JSON only
+    Generate a response using the model and return clean JSON with normalized answer keys.
     """
     try:
         model = get_model()
         tokenizer = get_tokenizer()
-        
+
         input_text = f"<|im_start|>user\nGenerate a JSON quiz based on this instruction: {instruction}<|im_end|>"
         input_ids = tokenizer(input_text, return_tensors="pt").input_ids.to(model.device)
         attention_mask = torch.ones_like(input_ids)
@@ -35,17 +53,18 @@ def generate_response(instruction):
 
         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-        # Extract JSON string using regex
+        # Extract the JSON block
         match = re.search(r'\{.*\}', output_text, re.DOTALL)
         if not match:
             raise ValueError("No JSON object found in the generated output.")
 
         json_text = match.group(0)
-
-        # Parse to confirm it's valid
         parsed_json = json.loads(json_text)
 
-        return parsed_json  # Or json_text if you want raw string output
+        # Normalize answer key
+        normalized_json = normalize_answer_keys(parsed_json)
+
+        return normalized_json
 
     except Exception as e:
         logger.error(f"Error during generation: {str(e)}")

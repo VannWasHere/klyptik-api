@@ -25,15 +25,7 @@ class AskRequest(BaseModel):
 def ask(request: AskRequest):
     try:
         response = generate_response(request.instruction)
-        try:
-            # Parse the JSON string and return it directly
-            return json.loads(response)
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to generate valid JSON response"
-            )
+        return response
     except Exception as e:
         logger.error(f"Error in /ask endpoint: {str(e)}")
         logger.error(traceback.format_exc())
