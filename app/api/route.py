@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(
     prefix="/api",
-    tags=["quiz"],
+    tags=["Quiz API"],
     responses={404: {"description": "Not found"}},
 )
 
