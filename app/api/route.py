@@ -174,6 +174,29 @@ def submit_quiz_result(quiz_result: QuizResultRequest, user_id: str = Query(...,
             detail=f"Failed to save quiz result: {str(e)}"
         )
 
+@router.get("/quiz-results")
+def get_quiz_results(user_id: str = Query(..., description="User ID to retrieve quiz results")):
+    """
+    Get all quiz results for a user.
+    """
+    try:
+        db = initialize_firebase()
+        quiz_results_ref = db.collection("quiz_results").where("userId", "==", user_id).stream()
+        
+        quiz_results = []
+        for result in quiz_results_ref:
+            quiz_results.append(result.to_dict())
+        return {"quizResults": quiz_results}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving quiz results: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve quiz results: {str(e)}"
+        )
+
 @router.get("/user-profile")
 async def get_user_profile(user_id: str = Query(..., description="User ID to retrieve profile")):
     """
