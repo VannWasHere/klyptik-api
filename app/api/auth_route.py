@@ -47,7 +47,7 @@ class UserRegisterRequest(BaseModel):
         return v
 
 class UserLoginRequest(BaseModel):
-    email_or_username: str
+    email: EmailStr
     password: str
 
 class UserUpdateRequest(BaseModel):
@@ -104,12 +104,29 @@ async def register(request: UserRegisterRequest):
         if not success:
             error_detail = result.get("error", "Registration failed")
             logger.error(f"Registration failed: {error_detail}")
+            
+            # Add user-friendly error messages
+            error_message = "Registration failed"
+            if "EMAIL_EXISTS" in error_detail:
+                error_message = "This email is already registered. Please use a different email or try logging in."
+            elif "INVALID_EMAIL" in error_detail:
+                error_message = "The email address is not valid. Please check and try again."
+            elif "WEAK_PASSWORD" in error_detail:
+                error_message = "The password is too weak. Please use a stronger password."
+            else:
+                error_message = f"Registration failed: {error_detail}"
+                
             raise HTTPException(
                 status_code=400,
-                detail=error_detail
+                detail=error_message
             )
         
         logger.info(f"User registered successfully: {request.email}")
+        
+        # Add success message to the result
+        result["message"] = "Registration successful! You can now log in."
+        result["success"] = True
+        
         return result
     except HTTPException:
         raise
@@ -129,23 +146,40 @@ async def register(request: UserRegisterRequest):
 @router.post("/login")
 async def login(request: UserLoginRequest):
     """
-    Login with email/username and password
+    Login with email and password
     """
     try:
-        # Determine if input is email or username
-        is_email = '@' in request.email_or_username
-        
         success, result = signin_with_email_password(
-            request.email_or_username, 
+            request.email, 
             request.password,
-            is_email=is_email
+            is_email=True
         )
         
         if not success:
+            error_detail = result.get("error", "Login failed")
+            logger.error(f"Login failed: {error_detail}")
+            
+            # Add user-friendly error messages
+            error_message = "Login failed"
+            if "EMAIL_NOT_FOUND" in error_detail or "INVALID_PASSWORD" in error_detail:
+                error_message = "Invalid email or password. Please try again."
+            elif "USER_DISABLED" in error_detail:
+                error_message = "This account has been disabled. Please contact support."
+            elif "TOO_MANY_ATTEMPTS_TRY_LATER" in error_detail:
+                error_message = "Too many failed login attempts. Please try again later."
+            else:
+                error_message = f"Login failed: {error_detail}"
+                
             raise HTTPException(
                 status_code=401,
-                detail=result.get("error", "Login failed")
+                detail=error_message
             )
+        
+        logger.info(f"User logged in successfully: {request.email}")
+        
+        # Add success message to the result
+        result["message"] = "Login successful!"
+        result["success"] = True
         
         return result
     except HTTPException:
@@ -192,5 +226,9 @@ async def update_current_user(
             status_code=400,
             detail=result.get("error", "Update failed")
         )
+    
+    # Add success message to the result
+    result["message"] = "Profile updated successfully!"
+    result["success"] = True
     
     return result 

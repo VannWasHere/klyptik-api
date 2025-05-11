@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import logging
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.models.model_loader import load_model
 from app.api.route import router as api_router
@@ -21,6 +22,14 @@ app = FastAPI(
     title="Klyptik API",
     description="API for generating quiz questions using AI",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
 )
 
 # Include routers
