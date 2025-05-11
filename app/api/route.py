@@ -5,7 +5,7 @@ import logging
 import traceback
 from datetime import datetime
 from typing import List, Optional
-
+from google.cloud import firestore
 from app.models.model_loader import get_model, get_tokenizer
 from app.services.generation_service import generate_response
 from app.services.firebase_initiator import initialize_firebase
@@ -174,8 +174,31 @@ def submit_quiz_result(quiz_result: QuizResultRequest, user_id: str = Query(...,
             detail=f"Failed to save quiz result: {str(e)}"
         )
 
-@router.get("/quiz-results")
+@router.get("/latest-quiz-results")
 def get_quiz_results(user_id: str = Query(..., description="User ID to retrieve quiz results")):
+    """
+    Get last  quiz results for a user.
+    """
+    try:
+        db = initialize_firebase()
+        quiz_results_ref = db.collection("quiz_results").where("userId", "==", user_id).limit(5).stream()
+        
+        quiz_results = []
+        for result in quiz_results_ref:
+            quiz_results.append(result.to_dict())
+        return {"quizResults": quiz_results}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving quiz results: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve quiz results: {str(e)}"
+        )
+
+@router.get('/all-quiz-results')
+def get_all_quiz_results(user_id: str = Query(..., description="User ID to retrieve quiz results")):
     """
     Get all quiz results for a user.
     """
