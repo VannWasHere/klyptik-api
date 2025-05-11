@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(
     prefix="/auth",
-    tags=["authentication"],
+    tags=["Authentication API"],
     responses={404: {"description": "Not found"}},
 )
 

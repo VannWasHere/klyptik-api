@@ -216,34 +216,3 @@ async def get_user_profile(user_id: str = Query(..., description="User ID to ret
             status_code=500,
             detail=f"Failed to retrieve user profile: {str(e)}"
         )
-
-@router.get("/users")
-def get_users():
-    try:
-        # Initialize Firebase
-        try:
-            db = initialize_firebase()
-        except Exception as e:
-            logger.error(f"Firebase initialization error: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail="CONFIGURATION_NOT_FOUND"
-            )
-        
-        # Get users collection
-        users_ref = db.collection("users").stream()
-        
-        # Convert Firestore documents to dictionaries
-        users_list = []
-        for user in users_ref:
-            user_data = user.to_dict()
-            user_data['id'] = user.id  # Add document ID
-            users_list.append(user_data)
-        
-        return {"users": users_list}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in /users endpoint: {str(e)}")
-        logger.error(traceback.format_exc())
-        return {"error": str(e), "users": []}
