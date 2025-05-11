@@ -3,10 +3,18 @@ import logging
 
 from app.models.model_loader import load_model
 from app.api.route import router as api_router
+from app.api.auth_route import router as auth_router
+from app.config import FIREBASE_API_KEY
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Log the API key (masked for security)
+if FIREBASE_API_KEY:
+    logger.info(f"Firebase API Key loaded: {FIREBASE_API_KEY[:5]}...")
+else:
+    logger.error("Firebase API Key not found!")
 
 # Create FastAPI app
 app = FastAPI(
@@ -17,6 +25,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(api_router)
+app.include_router(auth_router)
 
 @app.on_event("startup")
 async def startup_event():
