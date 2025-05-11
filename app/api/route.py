@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import json
 import logging
 import traceback
@@ -19,12 +19,25 @@ router = APIRouter(
 )
 
 class AskRequest(BaseModel):
-    instruction: str
+    topic: str = Field(..., description="The topic for the quiz questions")
+    number_of_questions: int = Field(10, description="Number of questions to generate (default: 10)", ge=1, le=20)
 
 @router.post("/ask")
 def ask(request: AskRequest):
+    """
+    Generate a quiz with the specified number of questions about the given topic.
+    
+    - **topic**: The subject or theme for the quiz questions
+    - **number_of_questions**: Number of questions to generate (1-20, default: 10)
+    
+    Returns a JSON quiz with multiple-choice questions.
+    """
     try:
-        response = generate_response(request.instruction)
+        # Create a standardized instruction
+        instruction = f"Create {request.number_of_questions} multiple-choice questions about {request.topic}"
+        
+        # Generate quiz
+        response = generate_response(instruction)
         return response
     except Exception as e:
         logger.error(f"Error in /ask endpoint: {str(e)}")
