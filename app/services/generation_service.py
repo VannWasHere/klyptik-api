@@ -175,7 +175,7 @@ def generate_response(instruction):
             input_ids,
             attention_mask=attention_mask,
             max_length=2048,  # Increased max length for more detailed responses
-            temperature=0.7,  # Slightly increased temperature for more variety
+            temperature=0.5,  # Slightly increased temperature for more variety
             top_p=0.9,
             repetition_penalty=1.2,
             do_sample=True,
